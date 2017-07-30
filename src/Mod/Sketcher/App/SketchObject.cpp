@@ -1153,7 +1153,17 @@ int SketchObject::extend(int GeoId, double increment, int endpoint) {
     return retcode;
 }
 
+int SketchObject::split(int GeoId, const Base::Vector3d& point)
+{
+    return trimSplit(GeoId, point, true);
+}
+
 int SketchObject::trim(int GeoId, const Base::Vector3d& point)
+{
+    return trimSplit(GeoId, point, false);
+}
+
+int SketchObject::trimSplit(int GeoId, const Base::Vector3d& point, const bool split)
 {
     if (GeoId < 0 || GeoId > getHighestCurveIndex())
         return -1;
@@ -1167,6 +1177,10 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
     if (GeoId1 < 0 && GeoId2 >= 0) {
         std::swap(GeoId1,GeoId2);
         std::swap(point1,point2);
+    }
+    if (split && GeoId2 < 0) {
+      GeoId2 = GeoId1;
+      point2 = point1;
     }
 
     Part::Geometry *geo = geomlist[GeoId];
@@ -1186,7 +1200,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
                 std::swap(x1,x2);
             }
             if (x1 >= 0.001*length && x2 <= 0.999*length) {
-                if (x1 < x0 && x2 > x0) {
+                if ((x1 <= x0 && x2 >= x0) || split) {
                     int newGeoId = addGeometry(geo);
                     // go through all constraints and replace the point (GeoId,end) with (newGeoId,end)
                     transferConstraints(GeoId, end, newGeoId, end);
@@ -1511,7 +1525,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
                 std::swap(point1,point2);
                 std::swap(theta1,theta2);
             }
-            if (theta1 >= 0.001*arcLength && theta2 <= 0.999*arcLength) {
+            if ((theta1 >= 0.001*arcLength && theta2 <= 0.999*arcLength) || split) {
                 // Trim Point between intersection points
                 if (theta1 < theta0 && theta2 > theta0) {
                     int newGeoId = addGeometry(geo);
@@ -1857,7 +1871,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
                 std::swap(point1,point2);
                 std::swap(theta1,theta2);
             }
-            if (theta1 >= 0.001*arcLength && theta2 <= 0.999*arcLength) {
+            if ((theta1 >= 0.001*arcLength && theta2 <= 0.999*arcLength) || split) {
                 // Trim Point between intersection points
                 if (theta1 < theta0 && theta2 > theta0) {
                     int newGeoId = addGeometry(geo);

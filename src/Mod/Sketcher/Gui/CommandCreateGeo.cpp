@@ -6080,6 +6080,99 @@ bool CmdSketcherTrimming::isActive(void)
     return isCreateGeoActive(getActiveGuiDocument());
 }
 
+// ======================================================================================
+
+class DrawSketchHandlerSplit: public DrawSketchHandler
+{
+public:
+    DrawSketchHandlerSplit() {}
+    virtual ~DrawSketchHandlerSplit()
+    {
+        Gui::Selection().rmvSelectionGate();
+    }
+
+    virtual void activated(ViewProviderSketch *sketchgui)
+    {
+        Gui::Selection().clearSelection();
+        Gui::Selection().rmvSelectionGate();
+        Gui::Selection().addSelectionGate(new TrimmingSelection(sketchgui->getObject()));
+        setCursor(QPixmap(cursor_trimming),7,7);
+    }
+
+    virtual void mouseMove(Base::Vector2d onSketchPos)
+    {
+        Q_UNUSED(onSketchPos);
+    }
+
+    virtual bool pressButton(Base::Vector2d onSketchPos)
+    {
+        Q_UNUSED(onSketchPos);
+        return true;
+    }
+
+    virtual bool releaseButton(Base::Vector2d onSketchPos)
+    {
+        int GeoId = sketchgui->getPreselectCurve();
+        if (GeoId > -1) {
+            const Part::Geometry *geom = sketchgui->getSketchObject()->getGeometry(GeoId);
+            if (geom->getTypeId() == Part::GeomLineSegment::getClassTypeId() ||
+                geom->getTypeId() == Part::GeomArcOfCircle::getClassTypeId() ||
+                geom->getTypeId() == Part::GeomCircle::getClassTypeId()      ||
+                geom->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() ||
+                geom->getTypeId() == Part::GeomEllipse::getClassTypeId()) {
+                try {
+                    Gui::Command::openCommand("Split edge");
+                    Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.split(%d,App.Vector(%f,%f,0))",
+                              sketchgui->getObject()->getNameInDocument(),
+                              GeoId, onSketchPos.x, onSketchPos.y);
+                    Gui::Command::commitCommand();
+                    
+                    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher");
+                    bool autoRecompute = hGrp->GetBool("AutoRecompute",false);
+        
+                    if(autoRecompute)
+                        Gui::Command::updateActive();
+                }
+                catch (const Base::Exception& e) {
+                    Base::Console().Error("Failed to split edge: %s\n", e.what());
+                    Gui::Command::abortCommand();
+                }
+            }
+        }
+        else // exit the split tool if the user clicked on empty space
+            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+
+        return true;
+    }
+};
+
+DEF_STD_CMD_A(CmdSketcherSplit);
+
+CmdSketcherSplit::CmdSketcherSplit()
+  : Command("Sketcher_Split")
+{
+    sAppModule      = "Sketcher";
+    sGroup          = QT_TR_NOOP("Sketcher");
+    sMenuText       = QT_TR_NOOP("Split edge");
+    sToolTipText    = QT_TR_NOOP("Split an edge with respect to the picked position");
+    sWhatsThis      = "Sketcher_Split";
+    sStatusTip      = sToolTipText;
+    sPixmap         = "Sketcher_Split";
+    sAccel          = "T,S";
+    eType           = ForEdit;
+}
+
+void CmdSketcherSplit::activated(int iMsg)
+{
+    Q_UNUSED(iMsg);
+    ActivateHandler(getActiveGuiDocument(), new DrawSketchHandlerSplit());
+}
+
+bool CmdSketcherSplit::isActive(void)
+{
+    return isCreateGeoActive(getActiveGuiDocument());
+}
+
 
 // ======================================================================================
 
@@ -7723,6 +7816,7 @@ void CreateSketcherCommandsCreateGeo(void)
     //rcCmdMgr.addCommand(new CmdSketcherCreateText());
     //rcCmdMgr.addCommand(new CmdSketcherCreateDraftLine());
     rcCmdMgr.addCommand(new CmdSketcherTrimming());
+    rcCmdMgr.addCommand(new CmdSketcherSplit());
     rcCmdMgr.addCommand(new CmdSketcherExtend());
     rcCmdMgr.addCommand(new CmdSketcherExternal());
     rcCmdMgr.addCommand(new CmdSketcherCarbonCopy());

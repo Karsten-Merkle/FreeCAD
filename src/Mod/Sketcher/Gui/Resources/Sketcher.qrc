@@ -173,6 +173,7 @@
         <file>icons/Sketcher_Toggle_Constraint_Driven.svg</file>
         <file>icons/Sketcher_Toggle_Constraint_Driving.svg</file>
         <file>icons/Sketcher_Trimming.svg</file>
+        <file>icons/Sketcher_Split.svg</file>
         <file>icons/Sketcher_ViewSketch.svg</file>
         <file>icons/small/Constraint_Concentric_sm.xpm</file>
         <file>icons/small/Constraint_EqualLength_sm.xpm</file>

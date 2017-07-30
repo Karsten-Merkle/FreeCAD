@@ -178,8 +178,12 @@ public:
                const Base::Vector3d& refPnt1, const Base::Vector3d& refPnt2,
                double radius, bool trim=true);
 
+    /// split a curve
+    int split(int geoId, const Base::Vector3d& point);
     /// trim a curve
     int trim(int geoId, const Base::Vector3d& point);
+    /// trim a curve
+    int trimSplit(int geoId, const Base::Vector3d& point, const bool split);
     /// extend a curve
     int extend(int geoId, double increment, int endPoint);
 

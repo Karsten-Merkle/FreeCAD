@@ -823,6 +823,26 @@ PyObject* SketchObjectPy::trim(PyObject *args)
     Py_Return;
 }
 
+PyObject* SketchObjectPy::split(PyObject *args)
+{
+    PyObject *pcObj;
+    int GeoId;
+
+    if (!PyArg_ParseTuple(args, "iO!", &GeoId, &(Base::VectorPy::Type), &pcObj))
+        return 0;
+
+    Base::Vector3d v1 = static_cast<Base::VectorPy*>(pcObj)->value();
+
+    if (this->getSketchObjectPtr()->split(GeoId,v1)) {
+        std::stringstream str;
+        str << "Not able to split curve with the given index: " << GeoId;
+        PyErr_SetString(PyExc_ValueError, str.str().c_str());
+        return 0;
+    }
+
+    Py_Return;
+}
+
 PyObject* SketchObjectPy::extend(PyObject *args)
 {
     double increment;
