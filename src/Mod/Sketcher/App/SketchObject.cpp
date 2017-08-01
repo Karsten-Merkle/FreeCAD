@@ -1178,9 +1178,19 @@ int SketchObject::trimSplit(int GeoId, const Base::Vector3d& point, const bool s
         std::swap(GeoId1,GeoId2);
         std::swap(point1,point2);
     }
-    if (split && GeoId2 < 0) {
-      GeoId2 = GeoId1;
-      point2 = point1;
+    if (split) {
+      if (GeoId2 >= 0) {
+        if ((point-point1).Length() > (point-point2).Length()) {
+          GeoId1 = GeoId2;
+          point1 = point2;
+        } else {
+          GeoId2 = GeoId1;
+          point2 = point1;
+        }
+      } else {
+        GeoId2 = GeoId1;
+        point2 = point1;
+      }
     }
 
     Part::Geometry *geo = geomlist[GeoId];
@@ -1349,9 +1359,9 @@ int SketchObject::trimSplit(int GeoId, const Base::Vector3d& point, const bool s
                 std::swap(point1,point2);
                 std::swap(theta1,theta2);
             }
-            if (theta1 == theta0 || theta1 == theta2)
+            if (theta1 == theta0 || ((theta1 == theta2) && ! split))
                 return -1;
-            else if (theta1 > theta2)
+            else if (theta1 >= theta2)
                 theta2 += 2.f*M_PI;
 
             // Trim Point between intersection points
@@ -1437,9 +1447,9 @@ int SketchObject::trimSplit(int GeoId, const Base::Vector3d& point, const bool s
                 std::swap(point1,point2);
                 std::swap(theta1,theta2);
             }
-            if (theta1 == theta0 || theta1 == theta2)
+            if (theta1 == theta0 || ((theta1 == theta2) && ! split))
                 return -1;
-            else if (theta1 > theta2)
+            else if (theta1 >= theta2)
                 theta2 += 2.f*M_PI;
 
             // Trim Point between intersection points
@@ -1525,9 +1535,9 @@ int SketchObject::trimSplit(int GeoId, const Base::Vector3d& point, const bool s
                 std::swap(point1,point2);
                 std::swap(theta1,theta2);
             }
-            if ((theta1 >= 0.001*arcLength && theta2 <= 0.999*arcLength) || split) {
+            if (theta1 >= 0.001*arcLength && theta2 <= 0.999*arcLength) {
                 // Trim Point between intersection points
-                if (theta1 < theta0 && theta2 > theta0) {
+                if ((theta1 < theta0 && theta2 > theta0) || split) {
                     int newGeoId = addGeometry(geo);
                     // go through all constraints and replace the point (GeoId,end) with (newGeoId,end)
                     transferConstraints(GeoId, end, newGeoId, end);
@@ -1704,7 +1714,7 @@ int SketchObject::trimSplit(int GeoId, const Base::Vector3d& point, const bool s
             }
             if (theta1 >= 0.001*arcLength && theta2 <= 0.999*arcLength) {
                 // Trim Point between intersection points
-                if (theta1 < theta0 && theta2 > theta0) {
+                if ((theta1 < theta0 && theta2 > theta0) || split) {
                     int newGeoId = addGeometry(geo);
                     // go through all constraints and replace the point (GeoId,end) with (newGeoId,end)
                     transferConstraints(GeoId, end, newGeoId, end);
